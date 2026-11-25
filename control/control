@@ -1,0 +1,9 @@
+Package: luci-app-campusnet
+Version: 1.0.0-1
+Depends: libc, curl, jsonfilter, iwinfo
+Section: luci
+Category: LuCI
+Architecture: all
+Installed-Size: 20
+Maintainer: local
+Description: 校园网(Dr.COM)自动认证与 MTU 联动插件。按 SSID 识别无线网络，连接/重连时检测连通性，无法连通时重新认证；HTTPS 优先、HTTP 降级；图形界面可配置账号、密码、SSID、MTU、探活 IP 与检测频率，支持开机自启与定时检测，可完整卸载。

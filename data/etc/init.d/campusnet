@@ -1,0 +1,51 @@
+#!/bin/sh /etc/rc.common
+# campusnet 开机服务：开机等待目标SSID即执行 + 维护定时检测任务
+
+START=99
+CORE=/usr/libexec/campusnet/campusnet.sh
+CRON_FILE=/etc/crontabs/root
+MARK='campusnet-auto'
+
+# 按配置的检测频率刷新 cron 行
+sync_cron() {
+    local interval enabled
+    interval=$(uci -q get campusnet.main.check_interval)
+    [ -n "$interval" ] || interval=10
+    enabled=$(uci -q get campusnet.main.enabled)
+
+    touch "$CRON_FILE"
+    grep -v "$MARK" "$CRON_FILE" > /tmp/campusnet.cron 2>/dev/null
+    if [ "$enabled" = "1" ]; then
+        echo "*/$interval * * * * $CORE run # $MARK" >> /tmp/campusnet.cron
+    fi
+    mv /tmp/campusnet.cron "$CRON_FILE"
+    /etc/init.d/cron restart >/dev/null 2>&1
+}
+
+# 开机后台等待：目标SSID一出现并拿到IP就立即执行，无需等定时
+boot_wait() {
+    local n=0 found
+    while [ "$n" -lt 120 ]; do
+        found=$($CORE status 2>/dev/null | jsonfilter -e '@.found' 2>/dev/null)
+        if [ "$found" = "1" ]; then
+            sleep 2
+            $CORE run
+            return 0
+        fi
+        sleep 2
+        n=$((n + 2))
+    done
+}
+
+start() {
+    sync_cron
+    boot_wait &
+}
+
+stop() {
+    if [ -f "$CRON_FILE" ]; then
+        grep -v "$MARK" "$CRON_FILE" > /tmp/campusnet.cron 2>/dev/null
+        mv /tmp/campusnet.cron "$CRON_FILE"
+        /etc/init.d/cron restart >/dev/null 2>&1
+    fi
+}

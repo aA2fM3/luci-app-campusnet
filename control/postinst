@@ -1,0 +1,14 @@
+#!/bin/sh
+if [ -z "$IPKG_INSTROOT" ]; then
+	chmod +x /etc/init.d/campusnet \
+		/usr/libexec/campusnet/campusnet.sh \
+		/etc/hotplug.d/iface/30-campusnet 2>/dev/null
+	rm -f /tmp/luci-indexcache.*
+	rm -rf /tmp/luci-modulecache/
+	/etc/init.d/rpcd reload 2>/dev/null
+	if [ "$(uci -q get campusnet.main.enabled)" = "1" ]; then
+		/etc/init.d/campusnet enable
+		/etc/init.d/campusnet start
+	fi
+fi
+exit 0
